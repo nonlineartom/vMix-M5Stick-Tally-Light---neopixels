@@ -101,6 +101,7 @@ void posTallyNums()
 
 void setTallyProgram()
 {
+  chatForceDismiss();
   ledToggle(true);
   M5.Lcd.fillScreen(RED);
   M5.Lcd.setTextColor(WHITE, RED);
@@ -124,6 +125,7 @@ void setTallyProgram()
 }
 
 void setTallyPreview() {
+  chatForceDismiss();
   ledToggle(false);
   M5.Lcd.fillScreen(GREEN);
   M5.Lcd.setTextColor(BLACK, GREEN);
@@ -147,6 +149,7 @@ void setTallyPreview() {
 }
 
 void setTallyOff() {
+  chatForceDismiss();
   ledToggle(false);
   M5.Lcd.fillScreen(BLACK);
   M5.Lcd.setTextColor(WHITE, BLACK);
@@ -274,6 +277,8 @@ void showTallyScreen() {
   int xWifi = M5.Lcd.width() - 30;
   int yWifi = 2;
   drawWiFiIcon(xWifi, yWifi);
+
+  chatDrawBoredBadge();
 }
 
 void showStatus(){

@@ -18,6 +18,7 @@
 #include <Preferences.h>
 #include "k_PLUGINMANAGER.h"
 #include "l_RING.h"
+#include "m_CHAT.h"
 
 #if C_PLUS == 2
   #define LED_BUILTIN 19   // Plus2: internal LED on GPIO19

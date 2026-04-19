@@ -60,6 +60,7 @@ REMOVE THIS LINE WHEN YOU NEED STATIC IP */
         M5.Lcd.println("IP address: ");
         M5.Lcd.print(WiFi.localIP());
         startServer();
+        chatOnWiFiReady();
         connectTovMix(false);
     }
 }

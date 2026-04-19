@@ -18,6 +18,7 @@
 #include <Preferences.h>
 #include "k_PLUGINMANAGER.h"
 #include "l_RING.h"
+#include "m_CHAT.h"
 
 #ifndef BTN_M5_PIN
   #ifdef SIM_WOKWI
@@ -229,6 +230,8 @@ void setup()
   ringInit();
   ringSetStatus(RING_STATUS_BOOT);
 
+  chatBegin();
+
   Serial.print("SSID: ");
   Serial.println(&(WIFI_SSID[0]));
   Serial.print("PASS: ");
@@ -240,7 +243,7 @@ void loop()
   server.handleClient();
 
   btnM5.update();
-  if (btnM5.isClick()) {
+  if (btnM5.isSingleClick()) {
     if (screen == 0) {
       showNetworkScreen();
     } else if (screen == 1) {
@@ -250,6 +253,8 @@ void loop()
     } else if (screen == 3) {
       showTallyScreen();
     }
+  } else if (btnM5.isDoubleClick()) {
+    chatOnM5DoubleTap();
   }
 
   #if C_PLUS == 0 || C_PLUS == 1
@@ -341,6 +346,10 @@ void loop()
   }
 
   ringTick();
+  chatTick();
+  if (screen == 0 && chatOverlayActive()) {
+    chatDrawOverlay();
+  }
 
 
   if(screen == 1 && millis() > sigStrengthChk + interval){
