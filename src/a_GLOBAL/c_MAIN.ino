@@ -1,8 +1,109 @@
+// Note to maintainers: PlatformIO promotes the .ino containing setup()/loop()
+// to the head of the concatenated translation unit. Arduino IDE puts the
+// folder-named .ino (a_GLOBAL.ino) first. Mirror the include set here so
+// both orderings compile.
+#ifndef C_PLUS
+  #define C_PLUS 0
+#endif
+#if C_PLUS == 2
+  #include <M5Unified.h>
+#elif C_PLUS == 1
+  #include <M5StickCPlus.h>
+#else
+  #include <M5StickC.h>
+#endif
+#include <WiFi.h>
+#include <PinButton.h>
+#include <WebServer.h>
+#include <Preferences.h>
+#include "k_PLUGINMANAGER.h"
+#include "l_RING.h"
+
+#ifndef BTN_M5_PIN
+  #ifdef SIM_WOKWI
+    #define BTN_M5_PIN 35
+  #else
+    #define BTN_M5_PIN 37
+  #endif
+#endif
+#ifndef BTN_ACTION_PIN
+  #define BTN_ACTION_PIN 39
+#endif
+#ifndef LED_BUILTIN
+  #if C_PLUS == 2
+    #define LED_BUILTIN 19
+  #else
+    #define LED_BUILTIN 10
+  #endif
+#endif
+
+// Forward-declare cross-file functions so they resolve when PlatformIO
+// puts this .ino ahead of b_SETTINGS / d_VMIX / e_WIFI / f_WEBSERVER /
+// g..j screens in the concatenated translation unit.
+void loadSettings();
+void saveWiFiPreferences(String wifi_ssid, String wifi_pass);
+void resetSettings();
+void increaseTally();
+void resetTally();
+void saveBrightness();
+void printSettings();
+
+boolean connectTovMix(bool recursive);
+void singleReconnect();
+boolean retryConnectionvMix(int tryCount);
+void posTallyNums();
+void setTallyProgram();
+void setTallyPreview();
+void setTallyOff();
+void handleData(String data);
+void showTallyScreen();
+void showStatus();
+void noConnectionTovMix();
+
+void startWiFi();
+void startLocalWiFi();
+
+void handle_root();
+void handle_save();
+void handleReconnect();
+void handleScanNetwork();
+void startServer();
+
+void showNetworkScreen();
+void showAPScreen();
+void showTallyNum();
+void showBrightnessScreen();
+void updateBrightnessVar();
+void updateBrightness();
+
+int brightnessPctFromVar(int b);
+
+// Forward-declare state owned by a_GLOBAL.ino so references in this file
+// resolve regardless of concat order (PlatformIO: c_MAIN first; Arduino IDE:
+// a_GLOBAL first).
+extern Preferences preferences;
+extern int tnlen;
+extern String WIFI_SSID;
+extern String WIFI_PASS;
+extern String VMIX_IP;
+extern String M_TALLY;
+extern int VMIX_PORT;
+extern int TALLY_NR;
+extern int BRIGHTNESS;
+extern int CONN_INT;
+extern int MODE;
+extern int JUSTLIVE;
+extern int RING_ENABLE;
+extern int RING_BRIGHTNESS;
+extern int RING_SHOW_PREVIEW;
+extern int RING_ONLY_LIVE;
+extern String semver;
+
 WiFiClient client;
 WebServer server(80);  // Object of WebServer(HTTP port, 80 is default)
 
-PinButton btnM5(37);
-PinButton btnAction(39);
+PinButton btnM5(BTN_M5_PIN);
+PinButton btnAction(BTN_ACTION_PIN);
 
 PluginManager pm;
 
@@ -60,6 +161,16 @@ uint16_t getBatteryTextColor() {
   return WHITE;                           // LIVE & SAFE -> wit
 }
 
+// Battery current is positive when flowing INTO the cell — i.e. charging.
+// Works on both real AXP192 (M5StickC / StickC-Plus) and the sim shim.
+bool isCharging() {
+#if C_PLUS == 2
+  return M5.Power.isCharging();
+#else
+  return M5.Axp.GetBatCurrent() > 0.0f;
+#endif
+}
+
 // -------------------- Battery icon --------------------
 void drawBatteryIcon(int x, int y, int pct, uint16_t fg, uint16_t bg) {
   pct = constrain(pct, 0, 100);
@@ -80,6 +191,15 @@ void drawBatteryIcon(int x, int y, int pct, uint16_t fg, uint16_t bg) {
   // filling
   int fillW = map(pct, 0, 100, 0, w - 4);
   M5.Lcd.fillRect(x + 2, y + 2, fillW, h - 4, fg);
+
+  // Charging bolt overlay — visible whether or not the cell is full.
+  if (isCharging()) {
+    int cx = x + w / 2;
+    int cy = y + h / 2;
+    // Simple lightning bolt made of two filled triangles.
+    M5.Lcd.fillTriangle(cx - 3, cy - 5, cx + 3, cy - 1, cx - 1, cy - 1, YELLOW);
+    M5.Lcd.fillTriangle(cx + 1, cy + 1, cx - 3, cy + 5, cx + 3, cy + 1, YELLOW);
+  }
 }
 
 void setup()
@@ -105,6 +225,9 @@ void setup()
   ledToggle(false);
 
   loadSettings();
+
+  ringInit();
+  ringSetStatus(RING_STATUS_BOOT);
 
   Serial.print("SSID: ");
   Serial.println(&(WIFI_SSID[0]));
@@ -211,11 +334,13 @@ void loop()
     handleData(data);
   }
 
-  if (screen == 0 && millis() - lastBattCheck > 5000) {   
+  if (screen == 0 && millis() - lastBattCheck > 5000) {
     lastBattCheck = millis();
     renderBatteryLevel();
-    drawWiFiIcon(M5.Lcd.width() - 30, 2); 
-}
+    drawWiFiIcon(M5.Lcd.width() - 30, 2);
+  }
+
+  ringTick();
 
 
   if(screen == 1 && millis() > sigStrengthChk + interval){
@@ -260,8 +385,7 @@ void start()
   screenRotation = (screenRotation == 1 || screenRotation == 3) ? screenRotation : 3;
   M5.Lcd.setRotation(screenRotation);
 
-  String prod = "vMix M5Stick-C Tally";
-  String author = "by Guido Visser";
+  String prod = "BRONTIDE.MEDIA";
 
   M5.Lcd.setTextSize(1);
   M5.Lcd.setTextColor(WHITE, BLACK);
@@ -269,10 +393,13 @@ void start()
   M5.Lcd.println("v"+semver);
   M5.Lcd.setCursor(lcdCoordX(20), lcdCoordY(20));
   M5.Lcd.println(prod);
-  M5.Lcd.setCursor(lcdCoordX(35), lcdCoordY(40));
-  M5.Lcd.println(author);
 
-  delay(2000);
+  // Hold the boot splash for ~2s while the ring does its boot chase.
+  unsigned long splashUntil = millis() + 2000;
+  while (millis() < splashUntil) {
+    ringTick();
+    delay(30);
+  }
   startWiFi();
 }
 

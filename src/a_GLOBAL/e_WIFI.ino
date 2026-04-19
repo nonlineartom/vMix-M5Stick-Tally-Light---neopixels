@@ -1,6 +1,7 @@
 void startWiFi()
 {
     Serial.println("STARTING WIFI");
+    ringSetStatus(RING_STATUS_WIFI_CONNECTING);
     WiFi.mode(WIFI_STA);
     WiFi.begin(&(WIFI_SSID[0]), &(WIFI_PASS[0]));
 
@@ -32,7 +33,12 @@ REMOVE THIS LINE WHEN YOU NEED STATIC IP */
 
     while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < wifiTimeout) {
         M5.Lcd.print(".");
-        delay(1000); // Shorter delay for faster feedback
+        // Spin the ring animation during the blocking wait so the user
+        // gets live feedback even though loop() isn't ticking yet.
+        for (int i = 0; i < 10 && WiFi.status() != WL_CONNECTED; i++) {
+            ringTick();
+            delay(100);
+        }
     }
 
     if (WiFi.status() != WL_CONNECTED) {

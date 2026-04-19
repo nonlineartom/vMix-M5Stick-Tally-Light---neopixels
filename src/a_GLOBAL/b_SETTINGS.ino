@@ -26,6 +26,13 @@ void loadSettings()
   MODE = preferences.getUInt("mode") || MODE;
   JUSTLIVE = preferences.getUInt("justLive") || JUSTLIVE;
 
+  // NeoPixel ring settings — isKey() guards preserve the defaults on a
+  // fresh device where the keys have never been written.
+  if (preferences.isKey("ring_on"))  RING_ENABLE       = preferences.getUInt("ring_on");
+  if (preferences.isKey("ring_br"))  RING_BRIGHTNESS   = preferences.getUInt("ring_br");
+  if (preferences.isKey("ring_pre")) RING_SHOW_PREVIEW = preferences.getUInt("ring_pre");
+  if (preferences.isKey("ring_lo"))  RING_ONLY_LIVE    = preferences.getUInt("ring_lo");
+
   if(preferences.getString("m_tally").length() > 0){
     M_TALLY = preferences.getString("m_tally");
   }

@@ -12,6 +12,7 @@ boolean connectTovMix(bool recursive)
   {
     connectedTovMix = true;
     M5.Lcd.println("Connected to vMix!");
+    ringSetStatus(RING_STATUS_VMIX_CONNECTED);
 
     // Subscribe to the tally events
     client.println("SUBSCRIBE TALLY");
@@ -119,6 +120,7 @@ void setTallyProgram()
     M5.Lcd.println(TALLY_NR);
   }
   pm.onLive();
+  ringOnTally('1');
 }
 
 void setTallyPreview() {
@@ -141,6 +143,7 @@ void setTallyPreview() {
     M5.Lcd.println(TALLY_NR);
   }
   pm.onPre();
+  ringOnTally('2');
 }
 
 void setTallyOff() {
@@ -163,6 +166,7 @@ void setTallyOff() {
     M5.Lcd.println(TALLY_NR);
   }
   pm.onSafe();
+  ringOnTally('0');
 }
 
 // Handle incoming data

@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "author": "brontide.media",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+
+    { "type": "wokwi-ili9341", "id": "lcd",
+      "top": -180, "left": 220, "rotate": 0,
+      "attrs": {} },
+
+    { "type": "wokwi-pushbutton", "id": "btnM5",
+      "top": 200, "left": -120, "rotate": 0,
+      "attrs": { "color": "blue", "label": "M5 (G35)" } },
+    { "type": "wokwi-resistor", "id": "r1",
+      "top": 170, "left": -40, "rotate": 0,
+      "attrs": { "value": "10000" } },
+
+    { "type": "wokwi-pushbutton", "id": "btnAct",
+      "top": 280, "left": -120, "rotate": 0,
+      "attrs": { "color": "red", "label": "BTN39" } },
+    { "type": "wokwi-resistor", "id": "r2",
+      "top": 250, "left": -40, "rotate": 0,
+      "attrs": { "value": "10000" } },
+
+    { "type": "wokwi-led-ring", "id": "ring",
+      "top": -40, "left": -240, "rotate": 0,
+      "attrs": { "pixels": "16" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+
+    [ "esp:3V3", "lcd:VCC", "red", [ "v0" ] ],
+    [ "esp:GND.1", "lcd:GND", "black", [ "v0" ] ],
+    [ "esp:5",  "lcd:CS",  "orange", [ "v0" ] ],
+    [ "esp:4",  "lcd:RST", "yellow", [ "v0" ] ],
+    [ "esp:2",  "lcd:D/C", "green",  [ "v0" ] ],
+    [ "esp:23", "lcd:MOSI","blue",   [ "v0" ] ],
+    [ "esp:18", "lcd:SCK", "purple", [ "v0" ] ],
+    [ "esp:3V3","lcd:LED", "red",    [ "v0" ] ],
+    [ "esp:19", "lcd:MISO","cyan",   [ "v0" ] ],
+
+    [ "btnM5:1.l", "esp:35", "green", [ "v0" ] ],
+    [ "btnM5:2.l", "esp:GND.2", "black", [ "v0" ] ],
+    [ "r1:1", "esp:35", "green", [ "v0" ] ],
+    [ "r1:2", "esp:3V3", "red", [ "v0" ] ],
+
+    [ "btnAct:1.l", "esp:VN", "green", [ "v0" ] ],
+    [ "btnAct:2.l", "esp:GND.3", "black", [ "v0" ] ],
+    [ "r2:1", "esp:VN", "green", [ "v0" ] ],
+    [ "r2:2", "esp:3V3", "red", [ "v0" ] ],
+
+    [ "esp:26",  "ring:DIN", "green", [ "v0" ] ],
+    [ "esp:5V",   "ring:VCC", "red",   [ "v0" ] ],
+    [ "esp:GND.1","ring:GND", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}

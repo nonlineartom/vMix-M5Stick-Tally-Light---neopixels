@@ -1,3 +1,6 @@
+#ifndef K_PLUGINMANAGER_H
+#define K_PLUGINMANAGER_H
+
 //#include "plugins/LED_HAT.h";
 
 class PluginManager {
@@ -17,3 +20,5 @@ class PluginManager {
       //ledHat.onSafe();
     }
 };
+
+#endif
